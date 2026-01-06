@@ -1,8 +1,6 @@
 using System.Net;
 using Google.Apis.Drive.v3;
 
-public record DownloadRequest(string Url); // 👈 FELHOZVA IDE
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
@@ -62,3 +60,5 @@ app.MapPost("/api/download", async (DownloadRequest request) =>
 });
 
 app.Run();
+
+public record DownloadRequest(string Url);
