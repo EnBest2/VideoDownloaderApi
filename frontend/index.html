@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <title>Video Downloader</title>
+</head>
+<body>
+  <h1>Video Downloader</h1>
+
+  <input id="videoUrl" type="text" placeholder="Videó URL" size="50">
+  <button onclick="download()">Letöltés</button>
+
+  <pre id="result"></pre>
+
+  <script>
+    async function download() {
+      const url = document.getElementById("videoUrl").value;
+
+      const response = await fetch("https://videodownloaderapi-1.onrender.com/api/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+      });
+
+      const text = await response.text();
+      document.getElementById("result").textContent = text;
+    }
+  </script>
+</body>
+</html>
