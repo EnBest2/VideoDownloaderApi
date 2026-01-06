@@ -14,13 +14,19 @@
 
   <script>
     async function download() {
-      const url = document.getElementById("videoUrl").value;
+      console.log("Download called");
 
+      const url = document.getElementById("videoUrl").value;
+      console.log("URL:", url);
+
+      console.log("Fetch sent");
       const response = await fetch("https://videodownloaderapi-1.onrender.com/api/download", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url })
       });
+
+      console.log("Response received");
 
       const text = await response.text();
       document.getElementById("result").textContent = text;
