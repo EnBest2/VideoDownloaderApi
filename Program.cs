@@ -1,6 +1,8 @@
 using System.Net;
 using Google.Apis.Drive.v3;
 
+public record DownloadRequest(string Url); // 👈 FELHOZVA IDE
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
@@ -23,8 +25,6 @@ if (!Directory.Exists(mediaRoot))
 
 app.MapGet("/", () => "VideoDownloader API running.");
 
-public record DownloadRequest(string Url);
-
 app.MapPost("/api/download", async (DownloadRequest request) =>
 {
     if (string.IsNullOrWhiteSpace(request.Url))
@@ -45,7 +45,10 @@ app.MapPost("/api/download", async (DownloadRequest request) =>
             await response.Content.CopyToAsync(fs);
         }
 
-        var uploader = new GoogleDriveUploader(Environment.GetEnvironmentVariable("GOOGLE_CREDENTIALS_JSON"));
+        var uploader = new GoogleDriveUploader(
+            Environment.GetEnvironmentVariable("GOOGLE_CREDENTIALS_JSON")
+        );
+
         var driveUrl = await uploader.UploadFileAsync(filePath, fileName);
 
         File.Delete(filePath);
