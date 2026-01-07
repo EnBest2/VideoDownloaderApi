@@ -5,6 +5,7 @@ using Google.Apis.Services;
 public class GoogleDriveUploader
 {
     private readonly DriveService _driveService;
+    private readonly string _folderId;
 
     public GoogleDriveUploader(string jsonCredentials)
     {
@@ -16,6 +17,9 @@ public class GoogleDriveUploader
             HttpClientInitializer = credential,
             ApplicationName = "VideoDownloader"
         });
+
+        // IDE ÍRD A MAPPÁD ID-JÁT
+        _folderId = "1Qj8APGbL4L1U2NDTtm_5BgXeFokEJoHH";
     }
 
     public async Task<string> UploadFileAsync(string filePath, string fileName)
@@ -23,7 +27,7 @@ public class GoogleDriveUploader
         var fileMetadata = new Google.Apis.Drive.v3.Data.File
         {
             Name = fileName,
-            Parents = new[] { "root" }
+            Parents = new[] { _folderId }   // <-- EZ A LÉNYEG
         };
 
         using var stream = new FileStream(filePath, FileMode.Open);
