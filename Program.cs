@@ -1,6 +1,5 @@
 using System.Net;
 using Google.Apis.Drive.v3;
-using System.Threading.Channels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,11 +14,9 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Background queue
+// Background queue + worker + task store
 builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
 builder.Services.AddHostedService<BackgroundWorker>();
-
-// Task store (in-memory)
 builder.Services.AddSingleton<TaskStore>();
 
 var app = builder.Build();
@@ -35,7 +32,7 @@ app.MapGet("/", () => "VideoDownloader API running.");
 // ----------------------------
 // POST /api/download
 // ----------------------------
-app.MapPost("/api/download", async (DownloadRequest request, 
+app.MapPost("/api/download", async (DownloadRequest request,
                                     IBackgroundTaskQueue queue,
                                     TaskStore store) =>
 {
@@ -95,58 +92,3 @@ app.MapGet("/api/status/{taskId}", (string taskId, TaskStore store) =>
 app.Run();
 
 public record DownloadRequest(string Url);
-
-// ----------------------------
-// Background Queue
-// ----------------------------
-public interface IBackgroundTaskQueue
-{
-    ValueTask QueueBackgroundWorkItemAsync(Func<CancellationToken, Task> workItem);
-    ValueTask<Func<CancellationToken, Task>> DequeueAsync(CancellationToken cancellationToken);
-}
-
-public class BackgroundTaskQueue : IBackgroundTaskQueue
-{
-    private readonly Channel<Func<CancellationToken, Task>> _queue =
-        Channel.CreateUnbounded<Func<CancellationToken, Task>>();
-
-    public async ValueTask QueueBackgroundWorkItemAsync(Func<CancellationToken, Task> workItem)
-    {
-        await _queue.Writer.WriteAsync(workItem);
-    }
-
-    public async ValueTask<Func<CancellationToken, Task>> DequeueAsync(CancellationToken cancellationToken)
-    {
-        return await _queue.Reader.ReadAsync(cancellationToken);
-    }
-}
-
-// ----------------------------
-// Background Worker
-// ----------------------------
-public class BackgroundWorker : BackgroundService
-{
-    private readonly IBackgroundTaskQueue _taskQueue;
-
-    public BackgroundWorker(IBackgroundTaskQueue taskQueue)
-    {
-        _taskQueue = taskQueue;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            var workItem = await _taskQueue.DequeueAsync(stoppingToken);
-            await workItem(stoppingToken);
-        }
-    }
-}
-
-// ----------------------------
-// Task Store
-// ----------------------------
-public class TaskStore
-{
-    public Dictionary<string, string> Results { get; } = new();
-}
