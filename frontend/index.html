@@ -8,28 +8,50 @@
   <h1>Video Downloader</h1>
 
   <input id="videoUrl" type="text" placeholder="Videó URL" size="50">
-  <button onclick="download()">Letöltés</button>
+  <button onclick="startDownload()">Letöltés</button>
 
   <pre id="result"></pre>
 
   <script>
-    async function download() {
-      console.log("Download called");
-
+    async function startDownload() {
       const url = document.getElementById("videoUrl").value;
-      console.log("URL:", url);
+      document.getElementById("result").textContent = "Feldolgozás indítása...";
 
-      console.log("Fetch sent");
-      const response = await fetch("https://videodownloaderapi-1.onrender.com/api/download", {
+      // 1) Indítjuk a letöltést → taskId-t kapunk
+      const res = await fetch("https://videodownloaderapi-1.onrender.com/api/download", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url })
       });
 
-      console.log("Response received");
+      const data = await res.json();
+      const taskId = data.taskId;
 
-      const text = await response.text();
-      document.getElementById("result").textContent = text;
+      document.getElementById("result").textContent =
+        "Feldolgozás elindítva.\nTask ID: " + taskId + "\nÁllapot lekérdezése...";
+
+      // 2) Polling
+      checkStatus(taskId);
+    }
+
+    async function checkStatus(taskId) {
+      const res = await fetch(`https://videodownloaderapi-1.onrender.com/api/status/${taskId}`);
+      const data = await res.json();
+
+      if (data.status === "PENDING") {
+        document.getElementById("result").textContent =
+          "Feldolgozás folyamatban...\nTask ID: " + taskId;
+
+        setTimeout(() => checkStatus(taskId), 2000);
+      }
+      else if (data.status.startsWith("ERROR")) {
+        document.getElementById("result").textContent =
+          "Hiba történt:\n" + data.status;
+      }
+      else {
+        document.getElementById("result").textContent =
+          "Kész!\nGoogle Drive link:\n" + data.status;
+      }
     }
   </script>
 </body>
