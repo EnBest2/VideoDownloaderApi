@@ -18,7 +18,7 @@ public class GoogleDriveUploader
             ApplicationName = "VideoDownloader"
         });
 
-        // IDE ÍRD A MAPPÁD ID-JÁT
+        // A TE MAPPÁD ID-JA
         _folderId = "1Qj8APGbL4L1U2NDTtm_5BgXeFokEJoHH";
     }
 
@@ -27,17 +27,22 @@ public class GoogleDriveUploader
         var fileMetadata = new Google.Apis.Drive.v3.Data.File
         {
             Name = fileName,
-            Parents = new[] { _folderId }   // <-- EZ A LÉNYEG
+            Parents = new[] { _folderId }
         };
 
         using var stream = new FileStream(filePath, FileMode.Open);
 
         var request = _driveService.Files.Create(fileMetadata, stream, "video/mp4");
         request.Fields = "id";
+
         var result = await request.UploadAsync();
 
+        // 🔥 Itt írjuk ki a VALÓDI hibát
         if (result.Status != Google.Apis.Upload.UploadStatus.Completed)
-            throw new Exception("Upload failed");
+        {
+            var error = result.Exception?.ToString() ?? "Unknown error";
+            throw new Exception("Upload failed: " + error);
+        }
 
         var fileId = request.ResponseBody.Id;
 
